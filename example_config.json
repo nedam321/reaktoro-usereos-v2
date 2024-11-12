@@ -1,0 +1,24 @@
+{
+  "database": "database/mines19-thermofun.json",
+  "interpolationGrid": {
+    "temperatureC": {
+      "from": 200,
+      "to": 500,
+      "count": 51
+    },
+    "pressureBar": {
+      "from": 1000,
+      "to": 2500,
+      "count": 51
+    }
+  },
+  "aqueousPhase": {
+    "fromElements": "H O Na Cl Cu S Si"
+  },
+  "gaseousPhase": {
+    "fromSpecies": "CO2"
+  },
+  "mineralPhase": {
+    "fromSpecies": "Halite Chalcocite Quartz"
+  }
+}
