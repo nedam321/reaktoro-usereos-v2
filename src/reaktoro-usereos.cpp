@@ -154,8 +154,8 @@ int UserEosModule::initialize(const std::string& configPath) {
 
     std::cout << "Loaded config:\n";
     std::cout << "Database: '" << cfg.databasePath << "'\n";
-    /*std::cout << "Interpolation grid:\n";*/
-    /*std::cout << "  Temperature (C): [" << cfg.temperatureGrid.from << ' ' << cfg.temperatureGrid.to << "] / "
+    /*std::cout << "Interpolation grid:\n";
+    std::cout << "  Temperature (C): [" << cfg.temperatureGrid.from << ' ' << cfg.temperatureGrid.to << "] / "
         << cfg.temperatureGrid.count << " points\n";
     std::cout << "  Pressure (bar): [" << cfg.pressureGrid.from << ' ' << cfg.pressureGrid.to << "] / "
         << cfg.pressureGrid.count << " points\n";*/
@@ -181,7 +181,6 @@ int UserEosModule::initialize(const std::string& configPath) {
     m_solver = Reaktoro::EquilibriumSolver(m_system);
 
     m_solver.setOptions(m_op);
-    //m_conds = Reaktoro::EquilibriumConditions(m_system);
     updateParams();
 
     return 0;
@@ -204,14 +203,9 @@ m_hasSolidPhases = false;
 const auto& phases = m_system.phases();
 for (int idx = 0; idx < phases.size(); ++idx) {
     const auto& phase = phases[idx];
-    if (idx==0||idx==1) {//vot tyt drygaya proverka
+    if (idx==0||idx==1) {
     m_numTransportPhases++;
     m_fluidPhasesIds.push_back(idx);
-    /*std::array<char, 3> name = {' ', ' ', ' '};
-    std::copy_n(phase.name().data(), std::min(phase.name().length(), size_t(3)), name.begin());
-    m_phasesNames.push_back(name);
-
-    std::cout << "  New fluid phase: " << phase.name() << std::endl;*/
     if (idx == 0) {
         std::cout << "  New fluid phase: LIQ" << std::endl;
         m_phasesNames.push_back({ 'L', 'I', 'Q' });
@@ -221,7 +215,7 @@ for (int idx = 0; idx < phases.size(); ++idx) {
         m_phasesNames.push_back({ 'G', 'A', 'S' });
     }
     }
-    else if (idx==2) {//tyt tozhe pomenyat proverky SoM ili agrstate
+    else if (idx==2) {
          if (!m_hasSolidPhases) {
              m_numTransportPhases++;
              m_hasSolidPhases = true;
@@ -234,7 +228,7 @@ if (m_hasSolidPhases) {
      std::cout << "  New solid phase: SOL" << std::endl;
      m_phasesNames.push_back({ 'S', 'O', 'L' });
  }
-std::array<char, 3> name = { '1', ' ', ' ' };
+std::array<char, 3> name = {'1', ' ', ' '};
 m_componentNames.push_back(name);
 name = { '2', ' ', ' ' };
 m_componentNames.push_back(name);
@@ -251,13 +245,13 @@ m_molarWeights.push_back(0.0440096);
 m_molarWeights.push_back(0.100087);
 m_molarWeights.push_back(0.100087);
 std::cout << "Elements: ";
-/*for (const auto& elem : m_system.elements()) {
-    //std::array<char, 3> name = { '1', ' ', ' ' };
-    //std::copy_n(elem.name().data(), std::min(elem.name().length(), size_t(3)), name.begin());
-    //m_componentNames.push_back(name);
+for (const auto& elem : m_system.elements()) {
+    /*std::array<char, 3> name = {' ', ' ', ' '};
+    std::copy_n(elem.name().data(), std::min(elem.name().length(), size_t(3)), name.begin());
+    m_componentNames.push_back(name);*/
     m_molarWeights.push_back(elem.molarMass());
     std::cout << elem.name() << ' ';
-}*/
+}
 std::cout << std::endl;
 
 std::cout << "Species: ";
@@ -266,7 +260,6 @@ for (const auto& specie : m_system.species()) {
     std::string aux("#");
     std::string esc = specie.name().substr(0, 7);
     aux.append(esc);
-    //std::cout << specie.molarMass() << " " << aux << std::endl;
     std::copy_n(aux.data(), std::min(aux.length(), size_t(8)), name.begin());
     m_speciesNames.push_back(name);
 
@@ -288,28 +281,15 @@ bool UserEosModule::calculateEquilibrium(const double P, const double T, const d
     int8_t phaseId[], double auxArray[], int8_t mode) {
     Reaktoro::ChemicalState state(m_system);
     Reaktoro::EquilibriumConditions m_conds(m_system);
-    //std::cout << "P=" << P << " T=" << T << std::endl;
-    //for (int ic = 0; ic < nComponents(); ++ic)
-        //std::cout << z[ic] << " ";
-    //std::cout << std::endl;
 
     m_conds.pressure(P, "Pa");
     m_conds.temperature(T, "K");
 
     Reaktoro::VectorXd elems = Reaktoro::zeros(m_system.elements().size() + 1);
     elems[0] = z[0] / m_auxWeights[0] * 2.;
-    //std::cout << elems[0]<<" ";
     elems[1] = z[1] / m_auxWeights[1] + z[2] / m_auxWeights[2] + z[3] / m_auxWeights[3] * 0.5;
-    //std::cout << elems[1] << " ";
     elems[2] = z[0] / m_auxWeights[0] + z[1] / m_auxWeights[1] * 2. + z[2] / m_auxWeights[2] * 3. + z[3] / m_auxWeights[3] * 1.5;
-    //std::cout << elems[2] << " ";
     elems[3] = z[2] / m_auxWeights[2] + z[3] / m_auxWeights[3];
-    //std::cout << elems[3] << " ";
-    //std::cout << std::endl;
-    /*double summ = 0;
-    for (int i = 0; i < 4; i++)
-        summ += elems[i];
-    std::cout << summ << std::endl;*/
     m_conds.setInitialComponentAmounts(elems);
 
     Reaktoro::EquilibriumResult result;
@@ -357,10 +337,6 @@ bool UserEosModule::calculateEquilibrium(const double P, const double T, const d
     auto phaseVolumes = aqprops.volume();
     auto phaseDensities = aqprops.density();
     auto phaseEnthalpies = aqprops.specificEnthalpy();
-    //auto phaseMasses = properties.phaseMasses();
-    //auto phaseVolumes = properties.phaseVolumes();
-    //auto phaseDensities = properties.phaseDensities();
-    //auto phaseEnthalpies = properties.phaseSpecificEnthalpies();
 
     auto totalVolume = double(properties.volume());
 
@@ -372,24 +348,11 @@ bool UserEosModule::calculateEquilibrium(const double P, const double T, const d
         auto phaseDensities = aqprops.density();
         auto phaseEnthalpies = aqprops.specificEnthalpy();
 
-        //props[ip * offset + 0] = double(phaseDensities[iphase]);
-        //props[ip * offset + 1] = double(phaseEnthalpies[iphase]);
-        //props[ip * offset + 2] = fluidViscosity;
-        //props[ip * offset + 3] = double(phaseVolumes[iphase]) / totalVolume;
-        //props[ip * offset + 4] = double(phaseVolumes[iphase]) / totalVolume;
-
         props[ip * offset + 0] = double(phaseDensities);
         props[ip * offset + 1] = double(phaseEnthalpies);
         props[ip * offset + 2] = fluidViscosity[ip];
         props[ip * offset + 3] = double(phaseVolumes) / totalVolume;
         props[ip * offset + 4] = double(phaseVolumes) / totalVolume;
-        //if (ip == 0)
-            //std::cout << " LIQ:     ";
-        //if (ip == 1)
-            //std::cout << " GAS:     ";
-        //for (int i = 0; i < 5;i++)
-            //std::cout << props[ip * offset + i] << " ";
-        //std::cout << std::endl;
 
         double sumC = 0.0;
         if (ip == 0) {
@@ -417,9 +380,7 @@ bool UserEosModule::calculateEquilibrium(const double P, const double T, const d
             //props[ip * offset + 6 + ic] = x * m_molarWeights[ic] / phaseMasses;
             //std::cout << props[ip * offset + 6 + ic] << " ";
             sumC += props[ip * offset + 6 + ic];
-            std::cout << props[ip * offset + 6 + ic] << "  ";
         }
-        std::cout << std::endl;
 
         if (std::abs(sumC - 1.0) > 1e-12) {
             std::cerr << "Error: fluid concentrations do not sum to 1!!! "<<sumC<<"\n";
@@ -448,10 +409,8 @@ bool UserEosModule::calculateEquilibrium(const double P, const double T, const d
             solidEnthalpy += double(phaseEnthalpies) * double(phaseMasses);
             solidVolume += phaseVolumes;
 
-            //for (int ic = 0; ic < nComponents(); ++ic) {
-                double x = properties.elementAmountInPhase(3, iphase);
-                props[ip * offset + 6 + 2] += x * m_auxWeights[3];
-            //}
+            double x = properties.elementAmountInPhase(3, iphase);
+            props[ip * offset + 6 + 2] += x * m_auxWeights[3];
         }
 
         if (solidMass < 1e-12) {
@@ -462,10 +421,6 @@ bool UserEosModule::calculateEquilibrium(const double P, const double T, const d
             props[ip * offset + 2] = NAN;
             props[ip * offset + 3] = NAN;
             props[ip * offset + 4] = NAN;
-            //std::cout << "SOL          ";
-            //for (int i = 0; i < 5; i++)
-                //std::cout << props[ip * offset + i] << " ";
-            //std::cout << std::endl;
         }
         else {
             // Specific enthalpy
@@ -476,18 +431,13 @@ bool UserEosModule::calculateEquilibrium(const double P, const double T, const d
             props[ip * offset + 2] = solidViscosity;
             props[ip * offset + 3] = solidVolume / totalVolume;
             props[ip * offset + 4] = 0.0;
-            //std::cout << "SOL          ";
-            //for(int i=0;i<5;i++)
-            //std::cout << props[ip * offset + i] << " ";
-            //std::cout << std::endl;
+
             double sumC = 0.0;
             // Normalize the concentrations
             for (int ic = 0; ic < nComponents(); ++ic) {
                 props[ip * offset + 6 + ic] /= solidMass;
-                //std::cout << props[ip * offset + 6 + ic] << " ";
                 sumC += props[ip * offset + 6 + ic];
             }
-            //std::cout << std::endl;
            if (std::abs(sumC - 1.0) > 1e-12) {
                 std::cerr << "Error: solid concentrations do not sum to 1!!! "<<sumC<<"\n";
             }
@@ -496,7 +446,7 @@ bool UserEosModule::calculateEquilibrium(const double P, const double T, const d
     }
 
     for (int iem = 0; iem < nEndMembers(); ++iem) {
-        auxArray[iem] = state.speciesAmount(iem); // моли возвращает
+        auxArray[iem] = state.speciesAmount(iem);
     }
 
     return true;
